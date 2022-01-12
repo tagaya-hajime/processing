@@ -1,4 +1,10 @@
 import fisica.*; //<>//
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+Connection con = null;
+Statement  stm = null;
+DateTimeFormatter dtf = null;
 
 Arrow arrow;
 
@@ -24,8 +30,24 @@ int height_velocity=-30;
 //スコアの合計
 int total=0;
 
+int countraws;
+int finish =0;
+
 void setup()
 {
+
+
+  dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss.SSS");
+  //DBファイルはスケッチフォルダに生成する
+  String dbName = sketchPath("rank.db");
+
+  //DBをOPENする
+  dbOpen(dbName );
+
+  countraws =countraws();
+  countraws++;
+
+
   frameRate(60);
   textAlign(CENTER);
   size(900, 1000);
@@ -104,8 +126,6 @@ void draw()
 
   arrow.mode();
 
-
-
   world.step();
   world.draw();
 
@@ -117,6 +137,10 @@ void draw()
     fill(255);
     textSize(60);
     text("TOTAL SCORE:"+total, width/2, 100);
+    if (finish==0) {
+      addDB();//データを書き込む
+      dbClose();
+    }
   }
   //スピードが遅くなるとリセット（まだ動かしていない時は除く）
   if ((abs(ball.getVelocityX())<25&&abs(ball.getVelocityY())<25)&&abs(ball.getVelocityX())+abs(ball.getVelocityY())!=0) {
@@ -196,4 +220,99 @@ void keyPressed() {
 }
 void mousePressed() {
   arrow.mode++;
+}
+
+
+
+
+
+
+void addDB() {
+  finish  =1;
+
+
+  LocalDateTime  ldt  =  LocalDateTime.now();
+  String dateTime = ldt.format( dtf );
+
+  String sql = "INSERT INTO TEST( _id, _total, _datetime) "
+    + "VALUES( ?, ?, ? )";
+
+  println(countraws);
+  println(total);
+  println(dateTime);
+
+  try {
+
+    PreparedStatement pstm = con.prepareStatement( sql );
+    pstm.setInt( 1, countraws );
+    pstm.setInt( 2, total );
+    pstm.setString( 3, dateTime);    
+    pstm.executeUpdate();    
+    pstm.close();
+  } 
+  catch( SQLException e ) {
+    e.printStackTrace();
+  }
+}
+
+int countraws() {
+  PreparedStatement psm = null;
+
+  try {
+
+    String sql = "SELECT COUNT(*) FROM test ";
+    psm = con.prepareStatement( sql ); 
+
+    //検索する
+    ResultSet rs = psm.executeQuery();
+
+    int raws = rs.getInt(1);
+
+
+    return raws;
+  } 
+  catch( SQLException e ) {
+    e.printStackTrace();
+    return 999;
+  }
+}
+
+
+void dbOpen( String dbName ) {
+  try {
+    //JDBCドライバを明示的にロードする
+    Class.forName("org.sqlite.JDBC");
+
+    //DBをOPENする
+    con = DriverManager.getConnection( "jdbc:sqlite:" + dbName );
+
+    stm = con.createStatement();
+    stm.close();
+
+    String sql = "CREATE TABLE IF NOT EXISTS test( "
+      + "_id INTEGER PRIMARY KEY," 
+      + "_total INTEGER,"
+      + "_datetime TEXT  )";
+
+    stm.executeUpdate( sql );
+    stm.close();
+  } 
+  catch( ClassNotFoundException e) {
+    e.printStackTrace();
+  } 
+  catch ( SQLException e ) {
+    e.printStackTrace();
+  }
+}
+void dbClose() {  
+  try {
+    if ( con != null ) {
+      //DBをクローズする
+      con.close();
+      con = null;
+    }
+  } 
+  catch ( SQLException e ) {
+    e.printStackTrace();
+  }
 }
