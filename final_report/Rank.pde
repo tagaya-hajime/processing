@@ -4,7 +4,6 @@ class Rank {
   ArrayList<Integer> rank_score;
   ArrayList<String> rank_date;
   int ranker;
-
   Rank() {
     rank_id=new ArrayList<Integer>();
     rank_no=new ArrayList<Integer>();
@@ -12,7 +11,6 @@ class Rank {
     rank_date=new ArrayList<String>();
     ranker=0;
   }
-
    void write(int a) {
     textSize(20);
     text("rank      score                   date           ", width/2, 200);

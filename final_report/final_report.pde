@@ -28,8 +28,8 @@ int[] score={0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 PVector[][] def_position;
 PVector[][] result;
 //arrowの変形するスピード
-int width_velocity =25;
-int height_velocity=-30;
+int width_velocity =15;
+int height_velocity=-15;
 //スコアの合計
 int total=0;
 
@@ -51,7 +51,7 @@ void setup()
   countraws++;
 
 
-  frameRate(60);
+  frameRate(120);
   textAlign(CENTER);
   size(900, 1000);
 
@@ -72,7 +72,7 @@ void setup()
   ball.setFill(50, 200, 255);
   ball.setNoStroke();
   ball.setRestitution(0.2);
-  ball.setDensity(50);
+  ball.setDensity(30);
   ball.setDamping(1);
   ball.setGrabbable(true);
   world.add(ball);
@@ -102,7 +102,7 @@ void setup()
     pin.setFill(255, 255, 255);
     pin.setNoStroke();
     pin.setPosition(def_position[0][i].x, def_position[0][i].y);
-    pin.setDensity(20);
+    pin.setDensity(15);
     world.add(pin);
     pins[i]=pin;
   }
@@ -138,7 +138,7 @@ void draw()
     arrow.draw();
   } else {
     fill(255, 0, 0);
-    rect(100, 0, 700, 800);
+    rect(100, 0, 700, 700);
     fill(255);
     textSize(60);
     text("TOTAL SCORE:"+total, width/2, 100);
@@ -195,7 +195,7 @@ void pinreset() {
       pin = new FBox(30, 30);
       pin.setPosition(def_position[set+1][i].x, def_position[set+1][i].y);
       pin.setNoStroke();
-      pin.setDensity(5);
+      pin.setDensity(15);
       pin.setFill(255, 255, 255);
       world.add(pin);
       pins[i]=pin;
@@ -262,7 +262,7 @@ int countraws() {
 
   try {
 
-    String sql = "SELECT COUNT(*) FROM test ";
+    String sql = "SELECT MAX(_ID)FROM test ";
     psm = con.prepareStatement( sql ); 
 
     //検索する
@@ -283,7 +283,7 @@ void getranking() {
   PreparedStatement psm = null;
   try {
 
-    String sql = "SELECT _ID ,RANK() OVER(ORDER BY _TOTAL DESC) ,_TOTAL,_DATETIME FROM test LIMIT 5";
+    String sql = "SELECT _ID ,RANK() OVER(ORDER BY _TOTAL DESC) ,_TOTAL,_DATETIME FROM test LIMIT 9";
     psm = con.prepareStatement( sql ); 
 
     //検索する
