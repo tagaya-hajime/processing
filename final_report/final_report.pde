@@ -1,15 +1,15 @@
-import fisica.*; //<>//
+import fisica.*; //<>// //<>//
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
+//DBへの接続情報
 Connection con = null;
-Statement  stm = null;
-DateTimeFormatter dtf = null;
+DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
 //矢印を管理するクラス
 Arrow arrow;
 //ランキングを実装するクラス
 Rank rank;
-
 //fisica
 FWorld world;
 FCircle ball;
@@ -32,32 +32,23 @@ int width_velocity =15;
 int height_velocity=-15;
 //スコアの合計
 int total=0;
-
+//データベースのIDの最大値を取得する
 int countraws;
+//ゲームの終了を判断する
 int finish =0;
 
 void setup()
 {
-
-
-  dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
-  //DBファイルはスケッチフォルダに生成する
-  String dbName = sketchPath("rank.db");
-
-  //DBをOPENする
-  dbOpen(dbName );
-
-  countraws =countraws();
-  countraws++;
-
-
   frameRate(120);
   textAlign(CENTER);
   size(900, 1000);
-
+  
+  //DBをOPENする
+  dbOpen(sketchPath("rank.db"));
+  //IDの最大値＋１を取得する
+  countraws =idmax();
   //rankを作る
   rank = new Rank();
-
   //arrowを作る
   arrow = new Arrow(450, 900, 450, 300, color(255, 50, 50), 0);
 
@@ -65,7 +56,6 @@ void setup()
   Fisica.init(this);
   world = new FWorld();
   world.setGravity(0, 0);
-
   //ballをつくる
   ball = new FCircle(50);
   ball.setPosition(width/2, 900);
@@ -76,7 +66,7 @@ void setup()
   ball.setDamping(1);
   ball.setGrabbable(true);
   world.add(ball);
-
+  
   //もともとのpinの場所(最初にすべてのゲーム分生成する)
   def_position=new PVector[10][];
   for (int i=0; i<match; i++) {
@@ -85,7 +75,6 @@ void setup()
       def_position[i][j]=new PVector(random(330, 570), random(30, 400));
     }
   }
-
   //プレイ後のpinの場所
   result=new PVector[10][];
   for (int i=0; i<match; i++) {
@@ -94,7 +83,6 @@ void setup()
       result[i][j]=new PVector(0, 0);
     }
   }
-
   //pinを作る
   pins = new FBox[10];
   for (int i=0; i<pins.length; i++) {
@@ -135,19 +123,24 @@ void draw()
   world.draw();
 
   if (set<match) {
+    //ゲーム中
     arrow.draw();
   } else {
+    //ゲーム後
     fill(255, 0, 0);
     rect(100, 0, 700, 700);
     fill(255);
     textSize(60);
     text("TOTAL SCORE:"+total, width/2, 100);
+    //ゲーム終了後一度だけ実行する
     if (finish==0) {
       addDB();//データを書き込む
-      getranking();
+      getranking();//ランキングを取得する
     }
+    //ランキングを表示
     rank.write(countraws);
-    if(rank.ranker!=0)text("new!→", 230, rank.ranker);    
+    //今回の結果がランクインしたら実行
+    if (rank.ranker!=0)text("new!→", 230, rank.ranker);
   }
   //スピードが遅くなるとリセット（まだ動かしていない時は除く）
   if ((abs(ball.getVelocityX())<25&&abs(ball.getVelocityY())<25)&&abs(ball.getVelocityX())+abs(ball.getVelocityY())!=0) {
@@ -157,8 +150,7 @@ void draw()
   }
 }
 
-
-//ゲームごとの処理とりまとめ
+//セットごとの処理とりまとめ
 void resetadaptor() {
   ballreset();
   arrowreset();
@@ -215,61 +207,34 @@ void score() {
   set++;
 }
 
-void keyPressed() {
-  if (keyCode == ENTER) {
-    textSize(16);
-    text("Xv:"+ball.getVelocityX(), 100, height/2);
-    text("Yv:"+ball.getVelocityY(), 100, height/2+50);
-    text("X:"+mouseX, 100, height/2+100);
-    text("Y:"+mouseY, 100, height/2+150);
-    text("set:"+set, 100, height/2+200);
-  }
-}
-void mousePressed() {
-  arrow.mode++;
-}
-
-
-//usedb
+//ゲーム結果をDBに格納する
 void addDB() {
-  finish  =1;
-
-  LocalDateTime  ldt  =  LocalDateTime.now();
+  finish =1;
+  LocalDateTime ldt = LocalDateTime.now();
   String dateTime = ldt.format( dtf );
-
-  String sql = "INSERT INTO TEST( _id, _total, _datetime) "
-    + "VALUES( ?, ?, ? )";
-
-  println(countraws);
-  println(total);
-  println(dateTime);
-
   try {
-
-    PreparedStatement pstm = con.prepareStatement( sql );
-    pstm.setInt( 1, countraws );
-    pstm.setInt( 2, total );
-    pstm.setString( 3, dateTime);    
-    pstm.executeUpdate();    
-    pstm.close();
+    String sql = "INSERT INTO TEST( _id, _total, _datetime) "
+      + "VALUES( ?, ?, ? )";
+    PreparedStatement psm = con.prepareStatement( sql );
+    psm.setInt( 1, countraws );
+    psm.setInt( 2, total );
+    psm.setString( 3, dateTime);    
+    psm.executeUpdate();    
+    psm.close();
   } 
   catch( SQLException e ) {
     e.printStackTrace();
   }
 }
-int countraws() {
-  PreparedStatement psm = null;
 
+//IDの最大値を取り出す
+int idmax() {
   try {
-
     String sql = "SELECT MAX(_ID)FROM test ";
-    psm = con.prepareStatement( sql ); 
-
-    //検索する
+    PreparedStatement psm= con.prepareStatement( sql ); 
     ResultSet rs = psm.executeQuery();
-
     int raws = rs.getInt(1);
-
+    raws++;
 
     return raws;
   } 
@@ -279,16 +244,12 @@ int countraws() {
   }
 }
 
+//ランキングの取得
 void getranking() {
-  PreparedStatement psm = null;
   try {
-
     String sql = "SELECT _ID ,RANK() OVER(ORDER BY _TOTAL DESC) ,_TOTAL,_DATETIME FROM test LIMIT 9";
-    psm = con.prepareStatement( sql ); 
-
-    //検索する
+    PreparedStatement psm  = con.prepareStatement( sql ); 
     ResultSet rs = psm.executeQuery();
-
     while (rs.next()) {
       rank.rank_id.add(rs.getInt(1));
       rank.rank_no.add(rs.getInt(2));
@@ -301,8 +262,7 @@ void getranking() {
   }
 }
 
-
-//db open&close
+//db open
 void dbOpen( String dbName ) {
   try {
     //JDBCドライバを明示的にロードする
@@ -310,15 +270,11 @@ void dbOpen( String dbName ) {
 
     //DBをOPENする
     con = DriverManager.getConnection( "jdbc:sqlite:" + dbName );
-
-    stm = con.createStatement();
-    stm.close();
-
+    Statement  stm  = con.createStatement();
     String sql = "CREATE TABLE IF NOT EXISTS test( "
       + "_id INTEGER PRIMARY KEY," 
       + "_total INTEGER,"
       + "_datetime TEXT  )";
-
     stm.executeUpdate( sql );
     stm.close();
   } 
@@ -329,15 +285,10 @@ void dbOpen( String dbName ) {
     e.printStackTrace();
   }
 }
-void dbClose() {  
-  try {
-    if ( con != null ) {
-      //DBをクローズする
-      con.close();
-      con = null;
-    }
-  } 
-  catch ( SQLException e ) {
-    e.printStackTrace();
+
+//エンターキーで矢印をストップ
+void keyPressed() {
+  if (keyCode == ENTER) {
+    arrow.mode++;
   }
 }
