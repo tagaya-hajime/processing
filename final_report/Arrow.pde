@@ -28,7 +28,7 @@ class Arrow {
   void mode() {
     switch(mode) {
     case 0:
-    
+
       break;
     case 1:
       position.x += width_velocity;

@@ -5,9 +5,12 @@ import java.time.format.DateTimeFormatter;
 Connection con = null;
 Statement  stm = null;
 DateTimeFormatter dtf = null;
-
+//矢印を管理するクラス
 Arrow arrow;
+//ランキングを実装するクラス
+Rank rank;
 
+//fisica
 FWorld world;
 FCircle ball;
 FBox pins[];
@@ -37,7 +40,7 @@ void setup()
 {
 
 
-  dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss.SSS");
+  dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
   //DBファイルはスケッチフォルダに生成する
   String dbName = sketchPath("rank.db");
 
@@ -52,6 +55,8 @@ void setup()
   textAlign(CENTER);
   size(900, 1000);
 
+  //rankを作る
+  rank = new Rank();
 
   //arrowを作る
   arrow = new Arrow(450, 900, 450, 300, color(255, 50, 50), 0);
@@ -133,14 +138,16 @@ void draw()
     arrow.draw();
   } else {
     fill(255, 0, 0);
-    rect(100, 0, 700, 150);
+    rect(100, 0, 700, 800);
     fill(255);
     textSize(60);
     text("TOTAL SCORE:"+total, width/2, 100);
     if (finish==0) {
       addDB();//データを書き込む
-      dbClose();
+      getranking();
     }
+    rank.write(countraws);
+    if(rank.ranker!=0)text("new!→", 230, rank.ranker);    
   }
   //スピードが遅くなるとリセット（まだ動かしていない時は除く）
   if ((abs(ball.getVelocityX())<25&&abs(ball.getVelocityY())<25)&&abs(ball.getVelocityX())+abs(ball.getVelocityY())!=0) {
@@ -223,13 +230,9 @@ void mousePressed() {
 }
 
 
-
-
-
-
+//usedb
 void addDB() {
   finish  =1;
-
 
   LocalDateTime  ldt  =  LocalDateTime.now();
   String dateTime = ldt.format( dtf );
@@ -254,7 +257,6 @@ void addDB() {
     e.printStackTrace();
   }
 }
-
 int countraws() {
   PreparedStatement psm = null;
 
@@ -277,7 +279,30 @@ int countraws() {
   }
 }
 
+void getranking() {
+  PreparedStatement psm = null;
+  try {
 
+    String sql = "SELECT _ID ,RANK() OVER(ORDER BY _TOTAL DESC) ,_TOTAL,_DATETIME FROM test LIMIT 5";
+    psm = con.prepareStatement( sql ); 
+
+    //検索する
+    ResultSet rs = psm.executeQuery();
+
+    while (rs.next()) {
+      rank.rank_id.add(rs.getInt(1));
+      rank.rank_no.add(rs.getInt(2));
+      rank.rank_score.add(rs.getInt(3));
+      rank.rank_date.add(rs.getString(4));
+    }
+  } 
+  catch( SQLException e ) {
+    e.printStackTrace();
+  }
+}
+
+
+//db open&close
 void dbOpen( String dbName ) {
   try {
     //JDBCドライバを明示的にロードする

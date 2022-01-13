@@ -1,0 +1,6 @@
+-- SQLite
+insert into TEST VALUES(1,10100,"0000/00/00 00:00");
+insert into TEST VALUES(2,10200,"0000/00/00 00:00");
+insert into TEST VALUES(3,10300,"0000/00/00 00:00");
+insert into TEST VALUES(4,10400,"0000/00/00 00:00");
+insert into TEST VALUES(5,10500,"0000/00/00 00:00");
