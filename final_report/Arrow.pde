@@ -33,12 +33,12 @@ class Arrow {
       if (position.x<300 || position.x>600)width_velocity = -width_velocity;
       break;
     case 2:
-      to.y += height_velocity;
-      if (to.y<10 || to.y>600)height_velocity = -height_velocity;
-      break;
-    case 3:
       to.x += width_velocity;
       if (to.x<300 || to.x>600)width_velocity = -width_velocity;
+      break;
+    case 3:
+      to.y += height_velocity;
+      if (to.y<10 || to.y>600)height_velocity = -height_velocity;
       break;
     case 4:
       ball.setVelocity((to.x-position.x)*1.5, (to.y-position.y)*1.5);
