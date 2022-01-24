@@ -1,4 +1,4 @@
-import fisica.*; //<>// //<>//
+import fisica.*;  //<>//
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -42,7 +42,7 @@ void setup()
   frameRate(120);
   textAlign(CENTER);
   size(900, 1000);
-  
+
   //DBをOPENする
   dbOpen(sketchPath("rank.db"));
   //IDの最大値＋１を取得する
@@ -66,7 +66,7 @@ void setup()
   ball.setDamping(1);
   ball.setGrabbable(true);
   world.add(ball);
-  
+
   //もともとのpinの場所(最初にすべてのゲーム分生成する)
   def_position=new PVector[10][];
   for (int i=0; i<match; i++) {
@@ -122,11 +122,11 @@ void draw()
   world.step();
   world.draw();
 
+  //ゲーム中
   if (set<match) {
-    //ゲーム中
     arrow.draw();
+  //ゲーム後
   } else {
-    //ゲーム後
     fill(255, 0, 0);
     rect(100, 0, 700, 700);
     fill(255);
@@ -145,6 +145,7 @@ void draw()
   //スピードが遅くなるとリセット（まだ動かしていない時は除く）
   if ((abs(ball.getVelocityX())<25&&abs(ball.getVelocityY())<25)&&abs(ball.getVelocityX())+abs(ball.getVelocityY())!=0) {
     resetadaptor();
+  //外側に出てもリセット
   } else if (ball.getY()<-100) {
     resetadaptor();
   }
@@ -213,9 +214,9 @@ void addDB() {
   LocalDateTime ldt = LocalDateTime.now();
   String dateTime = ldt.format( dtf );
   try {
-    String sql = "INSERT INTO TEST( _id, _total, _datetime) "
+    String sql_insert = "INSERT INTO TEST( _id, _total, _datetime) "
       + "VALUES( ?, ?, ? )";
-    PreparedStatement psm = con.prepareStatement( sql );
+    PreparedStatement psm = con.prepareStatement( sql_insert );
     psm.setInt( 1, countraws );
     psm.setInt( 2, total );
     psm.setString( 3, dateTime);    
@@ -230,12 +231,11 @@ void addDB() {
 //IDの最大値を取り出す
 int idmax() {
   try {
-    String sql = "SELECT MAX(_ID)FROM test ";
-    PreparedStatement psm= con.prepareStatement( sql ); 
+    String sql_idget = "SELECT MAX(_ID)FROM test ";
+    PreparedStatement psm= con.prepareStatement(sql_idget ); 
     ResultSet rs = psm.executeQuery();
     int raws = rs.getInt(1);
     raws++;
-
     return raws;
   } 
   catch( SQLException e ) {
@@ -247,8 +247,8 @@ int idmax() {
 //ランキングの取得
 void getranking() {
   try {
-    String sql = "SELECT _ID ,RANK() OVER(ORDER BY _TOTAL DESC) ,_TOTAL,_DATETIME FROM test LIMIT 9";
-    PreparedStatement psm  = con.prepareStatement( sql ); 
+    String sql_rankget = "SELECT _ID ,RANK() OVER(ORDER BY _TOTAL DESC) ,_TOTAL,_DATETIME FROM test LIMIT 9";
+    PreparedStatement psm  = con.prepareStatement( sql_rankget ); 
     ResultSet rs = psm.executeQuery();
     while (rs.next()) {
       rank.rank_id.add(rs.getInt(1));
@@ -265,17 +265,16 @@ void getranking() {
 //db open
 void dbOpen( String dbName ) {
   try {
-    //JDBCドライバを明示的にロードする
     Class.forName("org.sqlite.JDBC");
 
     //DBをOPENする
     con = DriverManager.getConnection( "jdbc:sqlite:" + dbName );
     Statement  stm  = con.createStatement();
-    String sql = "CREATE TABLE IF NOT EXISTS test( "
+    String sql_open = "CREATE TABLE IF NOT EXISTS test( "
       + "_id INTEGER PRIMARY KEY," 
       + "_total INTEGER,"
       + "_datetime TEXT  )";
-    stm.executeUpdate( sql );
+    stm.executeUpdate( sql_open );
     stm.close();
   } 
   catch( ClassNotFoundException e) {
